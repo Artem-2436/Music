@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Asinhrom Music</title>
+    
+    <!-- Подключение шрифта Inter для строгого минимализма -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Настройка конфигурации Tailwind под наш дизайн-код -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        asinhrom: {
+                            bg: '#FFFFFF',
+                            text: '#1A1A1A',
+                            gold: '#C5A059',
+                            gray: '#F5F5F5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Глобальные стили и сброс */
+        body {
+            background-color: #FFFFFF;
+            color: #1A1A1A;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Кастомизация скроллбара для сохранения эстетики */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #E5E5E5;
+            border-radius: 20px;
+        }
+
+        /* Стили для ползунка прогресса (Range Input) */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #C5A059;
+            cursor: pointer;
+            margin-top: -6px; 
+            box-shadow: 0 2px 6px rgba(197, 160, 89, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #E5E5E5;
+            border-radius: 2px;
+        }
+
+        /* Утилита для скрытия элементов без display:none (для анимаций) */
+        .hidden-visually {
+            display: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col overflow-hidden font-sans selection:bg-asinhrom-gold selection:text-white">
+
+    <!-- HEADER & TABS -->
+    <header class="w-full pt-6 pb-4 px-6 flex justify-center items-center z-20 bg-white/90 backdrop-blur-sm sticky top-0">
+        <div class="relative flex bg-gray-100 rounded-full p-1 shadow-inner">
+            <!-- Активная вкладка (фон) -->
+            <div id="tab-indicator" class="absolute top-1 left-1 w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-in-out"></div>
+            
+            <button onclick="switchTab('player')" class="relative z-10 w-32 py-2 text-sm font-medium tracking-wide transition-colors duration-300 text-asinhrom-text" id="btn-player">
+                Плеер
+            </button>
+            <button onclick="switchTab('library')" class="relative z-10 w-32 py-2 text-sm font-medium tracking-wide transition-colors duration-300 text-gray-500" id="btn-library">
+                Медиатека
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 relative w-full max-w-md mx-auto overflow-hidden">
+        
+        <!-- Вкладка 1: ПЛЕЕР -->
+        <section id="view-player" class="absolute inset-0 flex flex-col items-center justify-center px-6 transition-opacity duration-300 opacity-100 z-10">
+            
+            <!-- Обложка -->
+            <div class="relative group mb-10">
+                <div class="w-64 h-64 md:w-72 md:h-72 bg-gray-50 rounded-2xl border border-asinhrom-gold shadow-xl flex items-center justify-center overflow-hidden relative">
+                    <!-- Иконка ноты по умолчанию -->
+                    <svg id="default-cover-icon" class="w-20 h-20 text-asinhrom-gold opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                    </svg>
+                    <!-- Реальное изображение (если есть метаданные, здесь заглушка логики) -->
+                    <img id="track-artwork" src="" class="absolute inset-0 w-full h-full object-cover hidden" alt="Cover">
+                </div>
+                <!-- Декоративная тень -->
+                <div class="absolute -inset-1 bg-asinhrom-gold rounded-2xl blur opacity-20 -z-10 group-hover:opacity-30 transition-opacity duration-500"></div>
+            </div>
+
+            <!-- Информация о треке -->
+            <div class="text-center mb-8 w-full">
+                <h2 id="track-title" class="text-2xl font-light text-asinhrom-text mb-2 truncate px-4">Нет треков</h2>
+                <p id="track-artist" class="text-sm text-gray-400 uppercase tracking-widest font-medium">Asinhrom Music</p>
+            </div>
+
+            <!-- Таймлайн -->
+            <div class="w-full mb-8 px-2">
+                <input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between mt-2 text-xs font-mono text-gray-400">
+                    <span id="current-time">00:00</span>
+                    <span id="total-duration">00:00</span>
+                </div>
+            </div>
+
+            <!-- Управление -->
+            <div class="flex items-center justify-center gap-8 mb-8">
+                <!-- Назад -->
+                <button onclick="playPrev()" class="text-gray-400 hover:text-asinhrom-gold transition-colors p-2">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M11 16.5v-9l-7 4.5M12 3.5a9 9 0 1 0 9 9 9 9 0 0 0-9-9z"/></svg>
+                </button>
+
+                <!-- Плей / Пауза -->
+                <button onclick="togglePlay()" class="w-20 h-20 rounded-full border-2 border-asinhrom-gold flex items-center justify-center text-asinhrom-gold hover:bg-asinhrom-gold hover:text-white transition-all duration-300 shadow-lg shadow-asinhrom-gold/20 active:scale-95">
+                    <svg id="icon-play" class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="icon-pause" class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+
+                <!-- Вперед -->
+                <button onclick="playNext()" class="text-gray-400 hover:text-asinhrom-gold transition-colors p-2">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M13 16.5v-9l7 4.5M12 3.5a9 9 0 1 0 9 9 9 9 0 0 0-9-9z"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Вкладка 2: МЕДИАТЕКА -->
+        <section id="view-library" class="absolute inset-0 flex flex-col px-6 transition-opacity duration-300 opacity-0 pointer-events-none z-0 overflow-y-auto pb-20">
+            
+            <!-- Зона загрузки -->
+            <div class="mt-4 mb-8">
+                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-asinhrom-gold rounded-xl cursor-pointer bg-gray-50 hover:bg-white hover:shadow-md transition-all duration-300 group">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg class="w-8 h-8 mb-3 text-asinhrom-gold group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        <p class="mb-1 text-sm text-gray-500 font-medium">Нажмите для выбора MP3</p>
+                        <p class="text-xs text-gray-400">Локально и безопасно</p>
+                    </div>
+                    <input id="file-upload" type="file" accept=".mp3,audio/mpeg" multiple class="hidden" onchange="handleFiles(this.files)" />
+                </label>
+            </div>
+
+            <!-- Список треков -->
+            <div class="mb-8">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Библиотека (<span id="track-count">0</span>)</h3>
+                <div id="playlist-container" class="space-y-3">
+                    <!-- Треки будут добавляться сюда через JS -->
+                    <div class="text-center py-10 text-gray-300 text-sm italic" id="empty-state">
+                        Добавьте музыку, чтобы начать
+                    </div>
+                </div>
+            </div>
+
+            <!-- История -->
+            <div class="mt-auto pt-6 border-t border-gray-100">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">История прослушивания</h3>
+                <ul id="history-list" class="space-y-2 text-sm text-gray-500">
+                    <!-- История будет здесь -->
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- State Management ---
+        const state = {
+            playlist: [], // Массив объектов { file, url, name, id }
+            currentIndex: -1,
+            isPlaying: false,
+            history: []
+        };
+
+        const audio = new Audio();
+        audio.volume = 0.8;
+
+        // --- DOM Elements ---
+        const els = {
+            tabIndicator: document.getElementById('tab-indicator'),
+            btnPlayer: document.getElementById('btn-player'),
+            btnLibrary: document.getElementById('btn-library'),
+            viewPlayer: document.getElementById('view-player'),
+            viewLibrary: document.getElementById('view-library'),
+            
+            trackTitle: document.getElementById('track-title'),
+            progressBar: document.getElementById('progress-bar'),
+            currentTime: document.getElementById('current-time'),
+            totalDuration: document.getElementById('total-duration'),
+            iconPlay: document.getElementById('icon-play'),
+            iconPause: document.getElementById('icon-pause'),
+            
+            playlistContainer: document.getElementById('playlist-container'),
+            emptyState: document.getElementById('empty-state'),
+            trackCount: document.getElementById('track-count'),
+            historyList: document.getElementById('history-list')
+        };
+
+        // --- Navigation Logic ---
+        function switchTab(tabName) {
+            if (tabName === 'player') {
+                // Move indicator
+                els.tabIndicator.style.transform = 'translateX(0)';
+                // Text colors
+                els.btnPlayer.classList.replace('text-gray-500', 'text-asinhrom-text');
+                els.btnLibrary.classList.replace('text-asinhrom-text', 'text-gray-500');
+                // View visibility
+                els.viewPlayer.classList.remove('opacity-0', 'pointer-events-none', 'z-0');
+                els.viewPlayer.classList.add('opacity-100', 'z-10');
+                els.viewLibrary.classList.remove('opacity-100', 'z-10');
+                els.viewLibrary.classList.add('opacity-0', 'pointer-events-none', 'z-0');
+            } else {
+                // Move indicator
+                els.tabIndicator.style.transform = 'translateX(100%)';
+                // Text colors
+                els.btnLibrary.classList.replace('text-gray-500', 'text-asinhrom-text');
+                els.btnPlayer.classList.replace('text-asinhrom-text', 'text-gray-500');
+                // View visibility
+                els.viewLibrary.classList.remove('opacity-0', 'pointer-events-none', 'z-0');
+                els.viewLibrary.classList.add('opacity-100', 'z-10');
+                els.viewPlayer.classList.remove('opacity-100', 'z-10');
+                els.viewPlayer.classList.add('opacity-0', 'pointer-events-none', 'z-0');
+            }
+        }
+
+        // --- File Handling ---
+        function handleFiles(files) {
+            if (!files.length) return;
+
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('audio/')) {
+                    const url = URL.createObjectURL(file);
+                    const track = {
+                        id: Date.now() + Math.random(),
+                        file: file,
+                        url: url,
+                        name: file.name.replace(/\.[^/.]+$/, "") // Убираем расширение
+                    };
+                    state.playlist.push(track);
+                }
+            });
+
+            renderPlaylist();
+            
+            // Если это первые треки, загружаем первый, но не играем автоматически
+            if (state.currentIndex === -1 && state.playlist.length > 0) {
+                loadTrack(0);
+            }
+        }
+
+        function renderPlaylist() {
+            els.playlistContainer.innerHTML = '';
+            els.trackCount.innerText = state.playlist.length;
+
+            if (state.playlist.length === 0) {
+                els.emptyState.style.display = 'block';
+                return;
+            }
+            els.emptyState.style.display = 'none';
+
+            state.playlist.forEach((track, index) => {
+                const isActive = index === state.currentIndex;
+                
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${isActive ? 'border-asinhrom-gold bg-yellow-50/30' : 'border-gray-100 hover:border-asinhrom-gold/50'}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center overflow-hidden">
+                        <span class="text-xs font-mono text-gray-400 mr-3 w-4">${index + 1}</span>
+                        <span class="text-sm font-medium text-asinhrom-text truncate max-w-[200px]">${track.name}</span>
+                    </div>
+                    <button onclick="playSpecificTrack(${index})" class="text-xs font-semibold uppercase tracking-wider px-3 py-1 border border-transparent hover:border-asinhrom-gold hover:text-asinhrom-gold rounded transition-colors ${isActive ? 'text-asinhrom-gold border-asinhrom-gold' : 'text-gray-400'}">
+                        ${isActive && state.isPlaying ? 'Играет' : 'Включить'}
+                    </button>
+                `;
+                els.playlistContainer.appendChild(card);
+            });
+        }
+
+        // --- Player Logic ---
+        function loadTrack(index) {
+            if (index < 0 || index >= state.playlist.length) return;
+
+            state.currentIndex = index;
+            const track = state.playlist[index];
+
+            audio.src = track.url;
+            els.trackTitle.innerText = track.name;
+            
+            // Сброс UI
+            els.progressBar.value = 0;
+            els.currentTime.innerText = "00:00";
+            
+            // Обновляем список, чтобы подсветить активный трек
+            renderPlaylist();
+            
+            // Если было воспроизведение, продолжаем играть новый трек
+            if (state.isPlaying) {
+                audio.play().catch(e => console.error("Auto-play prevented", e));
+            }
+        }
+
+        function playSpecificTrack(index) {
+            if (state.currentIndex === index && state.isPlaying) {
+                togglePlay(); // Пауза если уже играет этот же трек
+                return;
+            }
+            loadTrack(index);
+            state.isPlaying = true;
+            updatePlayButton();
+            audio.play();
+        }
+
+        function togglePlay() {
+            if (state.playlist.length === 0) return;
+
+            if (state.isPlaying) {
+                audio.pause();
+                state.isPlaying = false;
+            } else {
+                audio.play();
+                state.isPlaying = true;
+            }
+            updatePlayButton();
+            renderPlaylist(); // Обновить статус кнопки в списке
+        }
+
+        function updatePlayButton() {
+            if (state.isPlaying) {
+                els.iconPlay.classList.add('hidden');
+                els.iconPause.classList.remove('hidden');
+            } else {
+                els.iconPlay.classList.remove('hidden');
+                els.iconPause.classList.add('hidden');
+            }
+        }
+
+        function playNext() {
+            if (state.playlist.length === 0) return;
+            let nextIndex = state.currentIndex + 1;
+            if (nextIndex >= state.playlist.length) nextIndex = 0; // Loop
+            loadTrack(nextIndex);
+            if(state.isPlaying) audio.play();
+        }
+
+        function playPrev() {
+            if (state.playlist.length === 0) return;
+            // Если прошло больше 3 секунд, restarting track
+            if (audio.currentTime > 3) {
+                audio.currentTime = 0;
+                return;
+            }
+            let prevIndex = state.currentIndex - 1;
+            if (prevIndex < 0) prevIndex = state.playlist.length - 1;
+            loadTrack(prevIndex);
+            if(state.isPlaying) audio.play();
+        }
+
+        function addToHistory(name) {
+            const li = document.createElement('li');
+            li.className = "flex items-center animate-fade-in";
+            li.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-asinhrom-gold mr-2"></span>${name}`;
+            
+            els.historyList.prepend(li);
+            
+            // Храним только последние 5
+            if (els.historyList.children.length > 5) {
+                els.historyList.removeChild(els.historyList.lastChild);
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Time Update
+        audio.addEventListener('timeupdate', () => {
+            const current = audio.currentTime;
+            const duration = audio.duration;
+            
+            if (!isNaN(duration)) {
+                const progressPercent = (current / duration) * 100;
+                els.progressBar.value = progressPercent;
+                
+                // Форматирование времени
+                els.currentTime.innerText = formatTime(current);
+                els.totalDuration.innerText = formatTime(duration);
+            }
+        });
+
+        // Seek
+        els.progressBar.addEventListener('input', (e) => {
+            const duration = audio.duration;
+            if (!isNaN(duration)) {
+                const seekTime = (e.target.value / 100) * duration;
+                audio.currentTime = seekTime;
+            }
+        });
+
+        // Track Ended
+        audio.addEventListener('ended', () => {
+            addToHistory(state.playlist[state.currentIndex].name);
+            playNext();
+   });
+
+//helper: format time
+function formatTime(seconds) {
+const min = Math.floor(seconds / 60)
+const sec = Math.floor(seconds % 60)
+return `${min < 10 '0'+ min : min}:${sec < 10 ? '0' + sec : sec}`;
+}
+</script>
+</body>
+</html>
